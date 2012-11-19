@@ -35,6 +35,7 @@ public slots:
     void resetPicIndex();
     void patientInfo(QString patient);
     void testInfo(QString test);
+    void diagonalCM(double cm);
 
 private slots:
     void on_pbCalibrate_clicked();
@@ -63,6 +64,7 @@ private:
     QString patientInfoString;
     QString testInfoString;
     int picIndex;
+    double diagonalCMDouble;
 
 };
 

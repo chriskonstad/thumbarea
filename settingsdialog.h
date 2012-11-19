@@ -13,7 +13,7 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(QString patient, QString test, QWidget *parent = 0);
+    explicit SettingsDialog(QString patient, QString test, double diagonalCM, QWidget *parent = 0);
     ~SettingsDialog();
 
 private slots:
@@ -23,6 +23,7 @@ private slots:
 signals:
     void patientInfo(QString patient);
     void testInfo(QString test);
+    void diagonalCM(double cm);
 
 private:
     Ui::SettingsDialog *ui;

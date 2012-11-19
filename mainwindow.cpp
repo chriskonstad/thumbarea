@@ -22,10 +22,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     calc = new QPixelCalculator(this);
 
-    patientInfoString = "Patient Info";
-    testInfoString = "Test Info";
+    patientInfoString = "PatientInfo";
+    testInfoString = "TestInfo";
     settings = new QSettings(this);
     picIndex = 1;
+    diagonalCMDouble = 1;
 
     timer->start(5);
 }
@@ -45,7 +46,7 @@ void MainWindow::updatePos()
 
 void MainWindow::calcPPCM()
 {
-    calc->calculatePPCM(this->width(), this->height(), 25.654);
+    calc->calculatePPCM(this->width(), this->height(), diagonalCMDouble);
 }
 
 void MainWindow::on_pbCalibrate_clicked()
@@ -65,6 +66,8 @@ void MainWindow::drawDataFieldInformation()
     scene->clear();
     scene->setSceneRect(0,0,ui->graphicsView->width(), ui->graphicsView->height());
     ui->graphicsView->resetTransform();
+
+    calcPPCM();
 
     for(int i=0; i<ui->graphicsView->width();i = i + (int)calc->getPPCM())
     {
@@ -137,6 +140,7 @@ void MainWindow::loadSettings()
 {
     patientInfoString = settings->value("patientInfoString", "Patient Info").toString();
     testInfoString = settings->value("testInfoString", "Test Info").toString();
+    diagonalCMDouble = settings->value("diagonalCM", 1).toDouble();
     qDebug() << "Settings loaded in MainWindow";
 
     drawDataFieldInformation(); //refresh the display to reflect updates
@@ -144,9 +148,11 @@ void MainWindow::loadSettings()
 
 void MainWindow::on_pbSettings_clicked()
 {
-    settingsDialog = new SettingsDialog(patientInfoString, testInfoString, this);
+    loadSettings(); //fix CTD bug?
+    settingsDialog = new SettingsDialog(patientInfoString, testInfoString, diagonalCMDouble, this);
     connect(settingsDialog, SIGNAL(patientInfo(QString)), this, SLOT(patientInfo(QString)));
     connect(settingsDialog, SIGNAL(testInfo(QString)), this, SLOT(testInfo(QString)));
+    connect(settingsDialog, SIGNAL(diagonalCM(double)), this, SLOT(diagonalCM(double)));
     connect(settingsDialog, SIGNAL(accepted()), this, SLOT(resetPicIndex()));
     settingsDialog->exec();
 }
@@ -171,5 +177,13 @@ void MainWindow::testInfo(QString test)
     testInfoString = test;
     settings->setValue("testInfoString", testInfoString);
     settings->sync();
-    qDebug() << "Test info copied from Settings dialg";
+    qDebug() << "Test info copied from Settings dialog";
+}
+
+void MainWindow::diagonalCM(double cm)
+{
+    diagonalCMDouble = cm;
+    settings->setValue("diagonalCM", diagonalCMDouble);
+    settings->sync();
+    qDebug() << "diagonalCMDouble copied from Settings dialog";
 }
