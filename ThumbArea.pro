@@ -8,18 +8,27 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = MouseTest
+TARGET = ThumbArea
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    qpixelcalculator.cpp
+    qpixelcalculator.cpp \
+    errordialog.cpp \
+    saveddialog.cpp \
+    settingsdialog.cpp
 
 HEADERS  += mainwindow.h \
-    qpixelcalculator.h
+    qpixelcalculator.h \
+    errordialog.h \
+    saveddialog.h \
+    settingsdialog.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    errordialog.ui \
+    saveddialog.ui \
+    settingsdialog.ui
 
 OTHER_FILES += \
     android/AndroidManifest.xml \
@@ -55,6 +64,15 @@ OTHER_FILES += \
     android/src/org/kde/necessitas/origo/QtActivity.java \
     android/src/org/kde/necessitas/origo/QtApplication.java \
     android/version.xml
+
+
+
+
+
+
+
+
+
 
 
 

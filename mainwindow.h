@@ -8,6 +8,11 @@
 #include <QDate>
 #include <QGraphicsItem>
 #include <QGraphicsScene>
+#include "errordialog.h"
+#include "saveddialog.h"
+#include <QString>
+#include <QSettings>
+#include "settingsdialog.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,6 +31,10 @@ public:
 public slots:
     void updatePos();
     void calcPPCM();
+    void loadSettings();
+    void resetPicIndex();
+    void patientInfo(QString patient);
+    void testInfo(QString test);
 
 private slots:
     void on_pbCalibrate_clicked();
@@ -34,6 +43,8 @@ private slots:
 
     void on_pbSaveData_clicked();
 
+    void on_pbSettings_clicked();
+
 private:
     Ui::MainWindow *ui;
     QTimer *timer;
@@ -41,7 +52,17 @@ private:
 
     QGraphicsScene *scene;
 
-    QGraphicsSimpleTextItem * dateItem;
+    ErrorDialog *errorDialog;
+
+    SavedDialog *savedDialog;
+
+    QSettings *settings;
+
+    SettingsDialog *settingsDialog;
+
+    QString patientInfoString;
+    QString testInfoString;
+    int picIndex;
 
 };
 
