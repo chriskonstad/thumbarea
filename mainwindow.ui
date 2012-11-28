@@ -18,16 +18,9 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLabel" name="labX">
+       <widget class="QLabel" name="labVersion">
         <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="labY">
-        <property name="text">
-         <string>TextLabel</string>
+         <string>Version:</string>
         </property>
        </widget>
       </item>
@@ -78,7 +71,7 @@
        <enum>QGraphicsView::FullViewportUpdate</enum>
       </property>
       <property name="optimizationFlags">
-       <set>QGraphicsView::DontClipPainter</set>
+       <set>QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontClipPainter|QGraphicsView::DontSavePainterState</set>
       </property>
      </widget>
     </item>

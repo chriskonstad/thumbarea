@@ -11,6 +11,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    QString versionString;
+    versionString.append(APP_VERSION);
+    qDebug() << versionString;
+    ui->labVersion->setText("Version: " + versionString);
     cursor = new QCursor();
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(updatePos()));
@@ -38,9 +42,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::updatePos()
 {
-    ui->labX->setText("X: " + QString::number(calc->getPointToCM(ui->graphicsView->cursor().pos().x())));
-    ui->labY->setText("Y: " + QString::number(calc->getPointToCM(ui->graphicsView->cursor().pos().y())));
-
     ui->graphicsView->scene()->addEllipse(cursor->pos().x() - ui->graphicsView->x(), cursor->pos().y() - ui->graphicsView->y(), 3, 3, QPen(), QBrush(Qt::red));
 }
 
@@ -97,6 +98,15 @@ void MainWindow::drawDataFieldInformation()
     testInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50 + patientInfo->boundingRect().width() + 50, 0);
     scene->addItem(testInfo);
 
+    //Add trial (index) number
+    QString trialString;
+    trialString.append("Trial: ");
+    trialString.append(QString::number(picIndex).rightJustified(2,'0'));
+    QGraphicsSimpleTextItem * trialInfo = new QGraphicsSimpleTextItem;
+    trialInfo->setText(trialString);
+    trialInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50 + patientInfo->boundingRect().width() + 50 + testInfo->boundingRect().width() + 50, 0);
+    scene->addItem(trialInfo);
+
     QList<QGraphicsItem *> items = scene->items();
     foreach(QGraphicsItem *i, items)
     {
@@ -107,6 +117,7 @@ void MainWindow::drawDataFieldInformation()
 
 void MainWindow::on_pbSaveData_clicked()
 {
+    timer->stop();  //pause the data-gathering
     ui->graphicsView->viewport()->update(); //update data field
 
     QDir photoDir("/mnt/sdcard/thumbdata");
@@ -120,7 +131,7 @@ void MainWindow::on_pbSaveData_clicked()
         }
     }
 
-    QString fileName = photoDir.absolutePath() + "/" + patientInfoString + "-" + testInfoString + QString::number(picIndex++).rightJustified(2,'0') + ".png";
+    QString fileName = photoDir.absolutePath() + "/" + patientInfoString + "-" + testInfoString + QString::number(picIndex).rightJustified(2,'0') + ".png";
     QPixmap pixMap = QPixmap::grabWidget(ui->graphicsView);
     if(pixMap.save(fileName))
     {
@@ -134,6 +145,10 @@ void MainWindow::on_pbSaveData_clicked()
         errorDialog->exec();
         qDebug() << "Error: Couldn't save the pixmap";
     }
+
+    picIndex++;
+
+    timer->start(); //resume the data-gathering
 }
 
 void MainWindow::loadSettings()
@@ -154,6 +169,9 @@ void MainWindow::on_pbSettings_clicked()
     connect(settingsDialog, SIGNAL(testInfo(QString)), this, SLOT(testInfo(QString)));
     connect(settingsDialog, SIGNAL(diagonalCM(double)), this, SLOT(diagonalCM(double)));
     connect(settingsDialog, SIGNAL(accepted()), this, SLOT(resetPicIndex()));
+    connect(settingsDialog, SIGNAL(accepted()), timer, SLOT(start()));
+    connect(settingsDialog, SIGNAL(rejected()), timer, SLOT(start()));
+    timer->stop();  //pause the data-gathering
     settingsDialog->exec();
 }
 

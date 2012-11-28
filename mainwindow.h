@@ -13,6 +13,7 @@
 #include <QString>
 #include <QSettings>
 #include "settingsdialog.h"
+#include <QGraphicsEllipseItem>
 
 namespace Ui {
 class MainWindow;
