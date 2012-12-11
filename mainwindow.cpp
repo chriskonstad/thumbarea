@@ -4,6 +4,7 @@
 #include <QtDebug>
 #include <QDir>
 #include <QMessageBox>
+#include <qmath.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -42,7 +43,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::updatePos()
 {
-    ui->graphicsView->scene()->addEllipse(cursor->pos().x() - ui->graphicsView->x(), cursor->pos().y() - ui->graphicsView->y(), 3, 3, QPen(), QBrush(Qt::red));
+    static QPoint lastCursorPosition;
+    if(lastCursorPosition != cursor->pos())    //make sure someone is touching the screen
+    {
+        ui->graphicsView->scene()->addEllipse(cursor->pos().x() - ui->graphicsView->x(), cursor->pos().y() - ui->graphicsView->y(), 3, 3, QPen(), QBrush(Qt::red));
+        lastCursorPosition = cursor->pos();
+        dataListRaw.append(lastCursorPosition);
+    }
 }
 
 void MainWindow::calcPPCM()
@@ -55,6 +62,7 @@ void MainWindow::on_pbCalibrate_clicked()
     calcPPCM();
 
     loadSettings();
+    dataListRaw.clear();
 
     if(ui->pbCalibrate->text() != "Reset")
     {
@@ -119,6 +127,8 @@ void MainWindow::on_pbSaveData_clicked()
 {
     timer->stop();  //pause the data-gathering
     ui->graphicsView->viewport()->update(); //update data field
+
+    centerofCircle();
 
     QDir photoDir("/mnt/sdcard/thumbdata");
     if(!photoDir.exists())
@@ -204,4 +214,45 @@ void MainWindow::diagonalCM(double cm)
     settings->setValue("diagonalCM", diagonalCMDouble);
     settings->sync();
     qDebug() << "diagonalCMDouble copied from Settings dialog";
+}
+
+QPointF MainWindow::centerofCircle()
+{
+    //Prep work first, including gathering of data points
+    QPointF center;
+    center.setX(-1);
+    center.setY(-1);
+
+    int sectionBreak = dataListRaw.count()/10;  //break the datalist into 5 sections to get 3 sample points
+    QPointF a = dataListRaw.at(sectionBreak*2);
+    QPointF b = dataListRaw.at(sectionBreak*5);
+    QPointF c = dataListRaw.at(sectionBreak*8);
+
+    qDebug() << a;
+    qDebug() << b;
+    qDebug() << c;
+
+    double yDelta0 = b.y() - a.y();
+    double xDelta0 = b.x() - a.x();
+    double yDelta1 = c.y() - b.y();
+    double xDelta1 = c.x() - b.x();
+
+    double slope0 = yDelta0/xDelta0;
+    double slope1 = yDelta1/xDelta1;
+    double xD = 0;
+    double yD = 0;
+
+    xD = ( slope0 * slope1 * (a.y() - c.y()) + slope1 * (a.x() + b.x()) - slope0 * (b.x() + c.x()) ) / (2.0 *(slope1 - slope0));
+    yD = -1.0 * (xD - (a.x() + b.x()) / 2 ) / slope0 + (a.y() +b.y()) / 2;
+
+    center.setX((int)xD);
+    center.setY((int)yD);
+    qDebug() << "Center of the arc: " << center;
+
+    int radius = sqrt( ((center.x() - a.x()) * (center.x() - a.x())) + ((center.y() - a.y()) * (center.y() - a.y())) );
+    qDebug() << "Radius: " << radius;
+    qDebug() << "PPCM" << calc->getPPCM();
+    scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(Qt::green));
+
+    return center;
 }

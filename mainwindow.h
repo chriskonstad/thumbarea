@@ -14,6 +14,8 @@
 #include <QSettings>
 #include "settingsdialog.h"
 #include <QGraphicsEllipseItem>
+#include <QPoint>
+#include <QPointF>
 
 namespace Ui {
 class MainWindow;
@@ -37,6 +39,7 @@ public slots:
     void patientInfo(QString patient);
     void testInfo(QString test);
     void diagonalCM(double cm);
+    QPointF centerofCircle();
 
 private slots:
     void on_pbCalibrate_clicked();
@@ -66,6 +69,8 @@ private:
     QString testInfoString;
     int picIndex;
     double diagonalCMDouble;
+
+    QList<QPoint> dataListRaw;
 
 };
 
