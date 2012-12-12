@@ -53,6 +53,8 @@ private slots:
 
     void on_pbSettings_clicked();
 
+    void on_pbAnalyze_clicked();
+
 private:
     Ui::MainWindow *ui;
     QTimer *timer;

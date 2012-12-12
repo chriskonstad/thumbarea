@@ -130,9 +130,6 @@ void MainWindow::on_pbSaveData_clicked()
     timer->stop();  //pause the data-gathering
     ui->graphicsView->viewport()->update(); //update data field
 
-    //calcCircle();
-    calcROM();
-
     QDir photoDir("/mnt/sdcard/thumbdata");
     if(!photoDir.exists())
     {
@@ -320,12 +317,13 @@ double MainWindow::calcROM()    //calculate the Range of Motion
         }
     }
 
+    scene->addLine(rom.getCenterPoint().x(), rom.getCenterPoint().y(), furthestPoint.x(), furthestPoint.y(), QPen(Qt::blue));
     qDebug() << "Furthest Point: " << furthestPoint;
 
     QPointF verticalPoint = rom.getCenterPoint();
 
     verticalPoint.setY(verticalPoint.y() - rom.getRadius());
-
+    scene->addLine(rom.getCenterPoint().x(), rom.getCenterPoint().y(), verticalPoint.x(), verticalPoint.y(), QPen(Qt::blue));
     qDebug() << "Vertical Point: " << verticalPoint;
 
     double deltaX = verticalPoint.x() - furthestPoint.x();
@@ -342,4 +340,9 @@ double MainWindow::calcROM()    //calculate the Range of Motion
     qDebug() << "Range of Motion degrees: " << romDegrees;
 
     return romDegrees;
+}
+
+void MainWindow::on_pbAnalyze_clicked()
+{
+    calcROM();
 }
