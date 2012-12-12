@@ -128,7 +128,7 @@ void MainWindow::on_pbSaveData_clicked()
     timer->stop();  //pause the data-gathering
     ui->graphicsView->viewport()->update(); //update data field
 
-    centerofCircle();
+    calcCircle();
 
     QDir photoDir("/mnt/sdcard/thumbdata");
     if(!photoDir.exists())
@@ -216,7 +216,7 @@ void MainWindow::diagonalCM(double cm)
     qDebug() << "diagonalCMDouble copied from Settings dialog";
 }
 
-QPointF MainWindow::centerofCircle()
+QPointF MainWindow::calcCircle()
 {
     //Prep work first, including gathering of data points
     QPointF center;
@@ -224,13 +224,38 @@ QPointF MainWindow::centerofCircle()
     center.setY(-1);
 
     int sectionBreak = dataListRaw.count()/10;  //break the datalist into 5 sections to get 3 sample points
-    QPointF a = dataListRaw.at(sectionBreak*2);
-    QPointF b = dataListRaw.at(sectionBreak*5);
-    QPointF c = dataListRaw.at(sectionBreak*8);
 
-    qDebug() << a;
-    qDebug() << b;
-    qDebug() << c;
+    QList<QPointF> centerList;
+
+    for(int i= -2;i<2;i++)
+    {
+        QPointF a = dataListRaw.at((sectionBreak*2)+i);
+        QPointF b = dataListRaw.at((sectionBreak*5)+i);
+        QPointF c = dataListRaw.at((sectionBreak*8)+i);
+        centerList.append(calcCenter(a,b,c));
+    }
+
+    double xTotal = 0;
+    double yTotal = 0;
+
+    foreach(QPointF p, centerList)
+    {
+        xTotal += p.x();
+        yTotal += p.y();
+    }
+
+    center.setX((int)xTotal/centerList.count());
+    center.setY((int)yTotal/centerList.count());
+
+    int radius = sqrt( ((center.x() - dataListRaw.at(sectionBreak*3).x()) * (center.x() - dataListRaw.at(sectionBreak*3).x())) + ((center.y() - dataListRaw.at(sectionBreak*3).y()) * (center.y() - dataListRaw.at(sectionBreak*3).y())) );
+    scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(QColor(0,255,0,64)));
+
+    return center;
+}
+
+QPointF MainWindow::calcCenter(QPointF a, QPointF b, QPointF c)
+{
+    QPointF centerTemp;
 
     double yDelta0 = b.y() - a.y();
     double xDelta0 = b.x() - a.x();
@@ -242,17 +267,12 @@ QPointF MainWindow::centerofCircle()
     double xD = 0;
     double yD = 0;
 
-    xD = ( slope0 * slope1 * (a.y() - c.y()) + slope1 * (a.x() + b.x()) - slope0 * (b.x() + c.x()) ) / (2.0 *(slope1 - slope0));
-    yD = -1.0 * (xD - (a.x() + b.x()) / 2 ) / slope0 + (a.y() +b.y()) / 2;
+    xD = ( (slope0 * slope1 * (a.y() - c.y())) + (slope1 * (a.x() + b.x())) - (slope0 * (b.x() + c.x())) ) / (2.0 *(slope1 - slope0));
+    yD = -1.0 * (xD - ((a.x() + b.x()) / 2 )) / slope0 + ((a.y() +b.y()) / 2);
 
-    center.setX((int)xD);
-    center.setY((int)yD);
-    qDebug() << "Center of the arc: " << center;
+    centerTemp.setX((int)xD);
+    centerTemp.setY((int)yD);
 
-    int radius = sqrt( ((center.x() - a.x()) * (center.x() - a.x())) + ((center.y() - a.y()) * (center.y() - a.y())) );
-    qDebug() << "Radius: " << radius;
-    qDebug() << "PPCM" << calc->getPPCM();
-    scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(Qt::green));
-
-    return center;
+    qDebug() << "Calculated center here: " << centerTemp;
+    return centerTemp;
 }

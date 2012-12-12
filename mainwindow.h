@@ -39,7 +39,8 @@ public slots:
     void patientInfo(QString patient);
     void testInfo(QString test);
     void diagonalCM(double cm);
-    QPointF centerofCircle();
+    QPointF calcCircle();
+    QPointF calcCenter(QPointF a, QPointF b, QPointF c);
 
 private slots:
     void on_pbCalibrate_clicked();
