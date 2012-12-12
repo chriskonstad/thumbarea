@@ -44,11 +44,12 @@ MainWindow::~MainWindow()
 void MainWindow::updatePos()
 {
     static QPoint lastCursorPosition;
-    if(lastCursorPosition != cursor->pos())    //make sure someone is touching the screen
+    QPointF mouse = cursor->pos();
+    if(lastCursorPosition != mouse)    //make sure someone is touching the screen
     {
-        ui->graphicsView->scene()->addEllipse(cursor->pos().x() - ui->graphicsView->x(), cursor->pos().y() - ui->graphicsView->y(), 3, 3, QPen(), QBrush(Qt::red));
-        lastCursorPosition = cursor->pos();
-        dataListRaw.append(lastCursorPosition);
+        ui->graphicsView->scene()->addEllipse(mouse.x() - ui->graphicsView->x(), mouse.y() - ui->graphicsView->y(), 3, 3, QPen(), QBrush(Qt::red));
+        lastCursorPosition = mouse.toPoint();
+        dataListRaw.append(QPoint(mouse.x() - ui->graphicsView->x(), mouse.y() - ui->graphicsView->y()));
     }
 }
 
@@ -223,16 +224,25 @@ QPointF MainWindow::calcCircle()
     center.setX(-1);
     center.setY(-1);
 
-    int sectionBreak = dataListRaw.count()/10;  //break the datalist into 5 sections to get 3 sample points
+    int sectionBreak = dataListRaw.count()/10;  //break the datalist into 10 sections
 
     QList<QPointF> centerList;
 
-    for(int i= -2;i<2;i++)
+    int numCenters = 0;
+
+    for(int i= 0;i<20;i++)
     {
-        QPointF a = dataListRaw.at((sectionBreak*2)+i);
-        QPointF b = dataListRaw.at((sectionBreak*5)+i);
-        QPointF c = dataListRaw.at((sectionBreak*8)+i);
-        centerList.append(calcCenter(a,b,c));
+        int indexA = qrand() % (dataListRaw.count());
+        int indexB = qrand() % (dataListRaw.count());
+        int indexC = qrand() % (dataListRaw.count());
+        QPointF a = dataListRaw.at(indexA);
+        QPointF b = dataListRaw.at(indexB);
+        QPointF c = dataListRaw.at(indexC);
+        if(a.x() != b.x() && b.x() != c.x() && a.x() != c.x() && a.y() != b.y() && b.y() != c.y() && a.y() != c.y())
+        {
+            numCenters++;
+            centerList.append(calcCenter(a,b,c));
+        }
     }
 
     double xTotal = 0;
@@ -244,11 +254,15 @@ QPointF MainWindow::calcCircle()
         yTotal += p.y();
     }
 
-    center.setX((int)xTotal/centerList.count());
-    center.setY((int)yTotal/centerList.count());
+    center.setX((int)xTotal/numCenters);
+    center.setY((int)yTotal/numCenters);
 
-    int radius = sqrt( ((center.x() - dataListRaw.at(sectionBreak*3).x()) * (center.x() - dataListRaw.at(sectionBreak*3).x())) + ((center.y() - dataListRaw.at(sectionBreak*3).y()) * (center.y() - dataListRaw.at(sectionBreak*3).y())) );
+    QPointF testPoint = dataListRaw.at(sectionBreak*3);
+    int radius = sqrt( ((center.x() - testPoint.x()) * (center.x() - testPoint.x())) + ((center.y() - testPoint.y()) * (center.y() - testPoint.y())) );
     scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(QColor(0,255,0,64)));
+
+    qDebug() << "Radius (px): " << radius;
+    qDebug() << "PPCM: " << calc->getPPCM();
 
     return center;
 }
@@ -257,6 +271,7 @@ QPointF MainWindow::calcCenter(QPointF a, QPointF b, QPointF c)
 {
     QPointF centerTemp;
 
+    qDebug() << a << "; " << b << "; " << c;
     double yDelta0 = b.y() - a.y();
     double xDelta0 = b.x() - a.x();
     double yDelta1 = c.y() - b.y();
