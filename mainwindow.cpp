@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QMessageBox>
 #include <qmath.h>
+#include <math.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -129,7 +130,8 @@ void MainWindow::on_pbSaveData_clicked()
     timer->stop();  //pause the data-gathering
     ui->graphicsView->viewport()->update(); //update data field
 
-    calcCircle();
+    //calcCircle();
+    calcROM();
 
     QDir photoDir("/mnt/sdcard/thumbdata");
     if(!photoDir.exists())
@@ -261,6 +263,9 @@ QPointF MainWindow::calcCircle()
     int radius = sqrt( ((center.x() - testPoint.x()) * (center.x() - testPoint.x())) + ((center.y() - testPoint.y()) * (center.y() - testPoint.y())) );
     scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(QColor(0,255,0,64)));
 
+    rom.setRadius((double)radius);
+    rom.setCenterPoint(center);
+
     qDebug() << "Radius (px): " << radius;
     qDebug() << "PPCM: " << calc->getPPCM();
 
@@ -290,4 +295,51 @@ QPointF MainWindow::calcCenter(QPointF a, QPointF b, QPointF c)
 
     qDebug() << "Calculated center here: " << centerTemp;
     return centerTemp;
+}
+
+double MainWindow::calcROM()    //calculate the Range of Motion
+{
+    double romDegrees = -1;
+
+    calcCircle();
+
+    QPointF furthestPoint = QPointF(-1, -1);
+    QPoint lastPoint = QPoint(0,0);
+
+    foreach(QPoint p, dataListRaw)  //find the furthest point down
+    {
+        if(p.y() >= lastPoint.y())
+        {
+            furthestPoint.setX(p.x());
+            furthestPoint.setY(p.y());
+            lastPoint = p;
+        }
+        else
+        {
+
+        }
+    }
+
+    qDebug() << "Furthest Point: " << furthestPoint;
+
+    QPointF verticalPoint = rom.getCenterPoint();
+
+    verticalPoint.setY(verticalPoint.y() - rom.getRadius());
+
+    qDebug() << "Vertical Point: " << verticalPoint;
+
+    double deltaX = verticalPoint.x() - furthestPoint.x();
+    double deltaY = verticalPoint.y() - furthestPoint.y();
+
+    double chordLength = sqrt( (deltaX * deltaX) + (deltaY * deltaY) );
+
+    double thetaR = qAcos( ( (chordLength * chordLength) - (2 * (rom.getRadius() * rom.getRadius())) ) / ( -2 * (rom.getRadius() * rom.getRadius())) );
+
+    double thetaD = 180.0 * thetaR / M_PI;
+
+    romDegrees = thetaD;
+
+    qDebug() << "Range of Motion degrees: " << romDegrees;
+
+    return romDegrees;
 }

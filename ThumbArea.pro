@@ -19,13 +19,15 @@ SOURCES += main.cpp\
     qpixelcalculator.cpp \
     errordialog.cpp \
     saveddialog.cpp \
-    settingsdialog.cpp
+    settingsdialog.cpp \
+    rangeofmotion.cpp
 
 HEADERS  += mainwindow.h \
     qpixelcalculator.h \
     errordialog.h \
     saveddialog.h \
-    settingsdialog.h
+    settingsdialog.h \
+    rangeofmotion.h
 
 FORMS    += mainwindow.ui \
     errordialog.ui \
@@ -66,6 +68,8 @@ OTHER_FILES += \
     android/src/org/kde/necessitas/origo/QtActivity.java \
     android/src/org/kde/necessitas/origo/QtApplication.java \
     android/version.xml
+
+
 
 
 

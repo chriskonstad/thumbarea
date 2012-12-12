@@ -16,6 +16,7 @@
 #include <QGraphicsEllipseItem>
 #include <QPoint>
 #include <QPointF>
+#include "rangeofmotion.h"
 
 namespace Ui {
 class MainWindow;
@@ -41,6 +42,7 @@ public slots:
     void diagonalCM(double cm);
     QPointF calcCircle();
     QPointF calcCenter(QPointF a, QPointF b, QPointF c);
+    double calcROM();   //Calculate the Range of Motion
 
 private slots:
     void on_pbCalibrate_clicked();
@@ -72,6 +74,8 @@ private:
     double diagonalCMDouble;
 
     QList<QPoint> dataListRaw;
+
+    RangeOfMotion rom;
 
 };
 
