@@ -227,6 +227,7 @@ QPointF MainWindow::calcCircle()
 
     QList<QPointF> centerList;
 
+    //find average center
     int numCenters = 0;
 
     for(int i= 0;i<20;i++)
@@ -256,6 +257,7 @@ QPointF MainWindow::calcCircle()
     center.setX((int)xTotal/numCenters);
     center.setY((int)yTotal/numCenters);
 
+    //Draw information on screen
     QPointF testPoint = dataListRaw.at(sectionBreak*3);
     int radius = sqrt( ((center.x() - testPoint.x()) * (center.x() - testPoint.x())) + ((center.y() - testPoint.y()) * (center.y() - testPoint.y())) );
     scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(QColor(0,255,0,64)));
@@ -345,4 +347,40 @@ double MainWindow::calcROM()    //calculate the Range of Motion
 void MainWindow::on_pbAnalyze_clicked()
 {
     calcROM();
+}
+
+double MainWindow::calcDistance(QPointF a, QPointF b)
+{
+    double deltaX = a.x() - b.x();
+    double deltaY = a.y() - b.y();
+
+    double d = sqrt( (deltaX * deltaX) + (deltaY * deltaY) );
+
+    return d;
+}
+
+double MainWindow::calcDistance(QPoint a, QPoint b)
+{
+    double deltaX = (double)a.x() - (double)b.x();
+    double deltaY = (double)a.y() - (double)b.y();
+
+    double d = sqrt( (deltaX * deltaX) + (deltaY * deltaY) );
+
+    return d;
+}
+
+QPointF MainWindow::calcAveragePoint(QList<QPointF> l)
+{
+    QPointF avgPnt = QPointF(0,0);
+
+    foreach(QPointF p, l)
+    {
+        avgPnt.setX(avgPnt.x() + p.x());
+        avgPnt.setY(avgPnt.y() + p.y());
+    }
+
+    avgPnt.setX(avgPnt.x() / (double)l.count());
+    avgPnt.setY(avgPnt.y() / (double)l.count());
+
+    return avgPnt;
 }

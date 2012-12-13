@@ -40,9 +40,12 @@ public slots:
     void patientInfo(QString patient);
     void testInfo(QString test);
     void diagonalCM(double cm);
-    QPointF calcCircle();
-    QPointF calcCenter(QPointF a, QPointF b, QPointF c);
+    QPointF calcCircle();   //do math to draw circle
+    QPointF calcCenter(QPointF a, QPointF b, QPointF c);    //calculate the center of a circle with 3 points
     double calcROM();   //Calculate the Range of Motion
+    double calcDistance(QPointF a, QPointF b);  //calculate the distance between two points
+    double calcDistance(QPoint a, QPoint b);    //calculate the distance between two points
+    QPointF calcAveragePoint(QList<QPointF> l); //return the average point from a list of points
 
 private slots:
     void on_pbCalibrate_clicked();
