@@ -225,37 +225,25 @@ QPointF MainWindow::calcCircle()
 
     int sectionBreak = dataListRaw.count()/10;  //break the datalist into 10 sections
 
-    QList<QPointF> centerList;
+    QList<QPointF> centerList;  //hold all calculated center points
 
-    //find average center
-    int numCenters = 0;
-
-    for(int i= 0;i<20;i++)
+    qDebug() << "---------- Starting to calculate center points ----------";
+    qDebug() << "dataListRaw count: " << dataListRaw.count();
+    for(int i= 0; i <dataListRaw.count() - 2;i++)
     {
-        int indexA = qrand() % (dataListRaw.count());
-        int indexB = qrand() % (dataListRaw.count());
-        int indexC = qrand() % (dataListRaw.count());
-        QPointF a = dataListRaw.at(indexA);
-        QPointF b = dataListRaw.at(indexB);
-        QPointF c = dataListRaw.at(indexC);
+        qDebug() << "Low: " << i << ", High: " << (i + 2);
+        QPointF a = dataListRaw.at(i);
+        QPointF b = dataListRaw.at(i+1);
+        QPointF c = dataListRaw.at(i+2);
         if(a.x() != b.x() && b.x() != c.x() && a.x() != c.x() && a.y() != b.y() && b.y() != c.y() && a.y() != c.y())
         {
-            numCenters++;
             centerList.append(calcCenter(a,b,c));
         }
     }
 
-    double xTotal = 0;
-    double yTotal = 0;
+    qDebug() << "---------- Finished calculating center points ----------";
 
-    foreach(QPointF p, centerList)
-    {
-        xTotal += p.x();
-        yTotal += p.y();
-    }
-
-    center.setX((int)xTotal/numCenters);
-    center.setY((int)yTotal/numCenters);
+    center = calcAveragePoint(centerList);  //Calculate the average center point
 
     //Draw information on screen
     QPointF testPoint = dataListRaw.at(sectionBreak*3);
@@ -371,6 +359,8 @@ double MainWindow::calcDistance(QPoint a, QPoint b)
 
 QPointF MainWindow::calcAveragePoint(QList<QPointF> l)
 {
+
+    qDebug() << "---------- Starting to calculate average center point ----------";
     QPointF avgPnt = QPointF(0,0);
 
     foreach(QPointF p, l)
@@ -382,5 +372,6 @@ QPointF MainWindow::calcAveragePoint(QList<QPointF> l)
     avgPnt.setX(avgPnt.x() / (double)l.count());
     avgPnt.setY(avgPnt.y() / (double)l.count());
 
+    qDebug() << "---------- Calculated average center point ----------";
     return avgPnt;
 }
