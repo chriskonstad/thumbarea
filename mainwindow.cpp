@@ -223,9 +223,13 @@ QPointF MainWindow::calcCircle()
     center.setX(-1);
     center.setY(-1);
 
+    QPointF roughCenter;
+    roughCenter.setX(-1);
+    roughCenter.setY(-1);
+
     int sectionBreak = dataListRaw.count()/10;  //break the datalist into 10 sections
 
-    QList<QPointF> centerList;  //hold all calculated center points
+    QList<QPointF> roughCenterList;  //hold all calculated center points
 
     qDebug() << "---------- Starting to calculate center points ----------";
     qDebug() << "dataListRaw count: " << dataListRaw.count();
@@ -237,13 +241,44 @@ QPointF MainWindow::calcCircle()
         QPointF c = dataListRaw.at(i+2);
         if(a.x() != b.x() && b.x() != c.x() && a.x() != c.x() && a.y() != b.y() && b.y() != c.y() && a.y() != c.y())
         {
-            centerList.append(calcCenter(a,b,c));
+            QPointF cP = calcCenter(a,b,c);
+            if(cP.x() < - 3000 || cP.x() > 3000 || cP.y() < - 3000 || cP.y() > 3000)
+            {
+                qDebug() << "Ignoring centerpoint at " << cP << " for being too far away from a reasonable value!";
+            }
+            else
+            {
+             roughCenterList.append(cP);
+            }
         }
     }
 
     qDebug() << "---------- Finished calculating center points ----------";
 
-    center = calcAveragePoint(centerList);  //Calculate the average center point
+    roughCenter = calcAveragePoint(roughCenterList);  //Calculate the rough average center point
+
+    QList<QPointF> centerList;
+
+    foreach(QPointF centerPoint, roughCenterList)
+    {
+        if(calcDistance(centerPoint, roughCenter) < 450)    //if the points are near the original center point
+        {
+            centerList.append(centerPoint);
+        }
+        else
+        {
+            qDebug() << "Ignoring centerpoint at " << centerPoint << " for being too far away from the average!";
+        }
+    }
+
+    if(!centerList.isEmpty())
+    {
+        center = calcAveragePoint(centerList);
+    }
+    else
+    {
+        qDebug() << "ERROR: Accurate center point list is empty!";
+    }
 
     //Draw information on screen
     QPointF testPoint = dataListRaw.at(sectionBreak*3);
@@ -360,7 +395,7 @@ double MainWindow::calcDistance(QPoint a, QPoint b)
 QPointF MainWindow::calcAveragePoint(QList<QPointF> l)
 {
 
-    qDebug() << "---------- Starting to calculate average center point ----------";
+    qDebug() << "---------- Starting to calculate average point ----------";
     QPointF avgPnt = QPointF(0,0);
 
     foreach(QPointF p, l)
@@ -371,7 +406,7 @@ QPointF MainWindow::calcAveragePoint(QList<QPointF> l)
 
     avgPnt.setX(avgPnt.x() / (double)l.count());
     avgPnt.setY(avgPnt.y() / (double)l.count());
-
-    qDebug() << "---------- Calculated average center point ----------";
+    qDebug() << "Average point: " << avgPnt;
+    qDebug() << "---------- Calculated average point ----------";
     return avgPnt;
 }
