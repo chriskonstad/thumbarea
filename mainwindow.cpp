@@ -46,11 +46,19 @@ void MainWindow::updatePos()
 {
     static QPoint lastCursorPosition;
     QPointF mouse = cursor->pos();
+    QRectF view = ui->graphicsView->sceneRect();
     if(lastCursorPosition != mouse)    //make sure someone is touching the screen
     {
-        ui->graphicsView->scene()->addEllipse(mouse.x() - ui->graphicsView->x(), mouse.y() - ui->graphicsView->y(), 3, 3, QPen(), QBrush(Qt::red));
+        if(mouse.x() - ui->graphicsView->x() > view.left() && mouse.x() - ui->graphicsView->x() < view.right() && mouse.y() - ui->graphicsView->y() > view.top() && mouse.y() - ui->graphicsView->y() < view.bottom())
+        {
+            ui->graphicsView->scene()->addEllipse(mouse.x() - ui->graphicsView->x(), mouse.y() - ui->graphicsView->y(), 3, 3, QPen(), QBrush(Qt::red));
+            dataListRaw.append(QPoint(mouse.x() - ui->graphicsView->x(), mouse.y() - ui->graphicsView->y()));
+        }
+        else
+        {
+            qDebug() << "Touch outside of the scene view!";
+        }
         lastCursorPosition = mouse.toPoint();
-        dataListRaw.append(QPoint(mouse.x() - ui->graphicsView->x(), mouse.y() - ui->graphicsView->y()));
     }
 }
 
@@ -242,7 +250,7 @@ QPointF MainWindow::calcCircle()
         if(a.x() != b.x() && b.x() != c.x() && a.x() != c.x() && a.y() != b.y() && b.y() != c.y() && a.y() != c.y())
         {
             QPointF cP = calcCenter(a,b,c);
-            if(cP.x() < - 3000 || cP.x() > 3000 || cP.y() < - 3000 || cP.y() > 3000)
+            if(cP.x() < - 3000 || cP.x() > 3000 || cP.y() < 0 || cP.y() > 3000)
             {
                 qDebug() << "Ignoring centerpoint at " << cP << " for being too far away from a reasonable value!";
             }
@@ -261,14 +269,7 @@ QPointF MainWindow::calcCircle()
 
     foreach(QPointF centerPoint, roughCenterList)
     {
-        if(calcDistance(centerPoint, roughCenter) < 450)    //if the points are near the original center point
-        {
-            centerList.append(centerPoint);
-        }
-        else
-        {
-            qDebug() << "Ignoring centerpoint at " << centerPoint << " for being too far away from the average!";
-        }
+        centerList.append(centerPoint);
     }
 
     if(!centerList.isEmpty())
