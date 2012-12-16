@@ -46,7 +46,7 @@ public slots:
     double calcDistance(QPointF a, QPointF b);  //calculate the distance between two points
     double calcDistance(QPoint a, QPoint b);    //calculate the distance between two points
     QPointF calcAveragePoint(QList<QPointF> l); //return the average point from a list of points
-
+    int randomInt(int low, int high);
 private slots:
     void on_pbCalibrate_clicked();
 

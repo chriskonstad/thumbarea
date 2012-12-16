@@ -6,6 +6,8 @@
 #include <QMessageBox>
 #include <qmath.h>
 #include <math.h>
+#include <QTime>
+#include <QApplication>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -14,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     QString versionString;
-    versionString.append(APP_VERSION);
+    versionString.append(QApplication::applicationVersion());
     qDebug() << versionString;
     ui->labVersion->setText("Version: " + versionString);
     cursor = new QCursor();
@@ -33,6 +35,10 @@ MainWindow::MainWindow(QWidget *parent) :
     settings = new QSettings(this);
     picIndex = 1;
     diagonalCMDouble = 1;
+
+    //Seed the random number generator
+    QTime time = QTime::currentTime();
+    qsrand((uint)time.msec());
 
     timer->start(5);
 }
@@ -240,12 +246,15 @@ QPointF MainWindow::calcCircle()
     QList<QPointF> roughCenterList;  //hold all calculated center points
 
     qDebug() << "---------- Starting to calculate center points ----------";
-    qDebug() << "dataListRaw count: " << dataListRaw.count();
-    for(int i= 0; i < dataListRaw.count();i++)
+    QList<QPoint> dataListTemp = dataListRaw;
+    while(dataListTemp.count() > 3)
     {
-        QPointF a = dataListRaw.at(i);
-        QPointF b = dataListRaw.at(i+1);
-        QPointF c = dataListRaw.at(i+2);
+        int indexA = randomInt(0, dataListTemp.count() - 1);
+        QPointF a = dataListTemp.takeAt(indexA);
+        int indexB = randomInt(0, dataListTemp.count() - 1);
+        QPointF b = dataListTemp.takeAt(indexB);
+        int indexC = randomInt(0, dataListTemp.count() - 1);
+        QPointF c = dataListTemp.takeAt(indexC);
         if(a.x() != b.x() && b.x() != c.x() && a.x() != c.x() && a.y() != b.y() && b.y() != c.y() && a.y() != c.y())
         {
             QPointF cP = calcCenter(a,b,c);
@@ -255,9 +264,11 @@ QPointF MainWindow::calcCircle()
             }
             else
             {
-             roughCenterList.append(cP);
+                roughCenterList.append(cP);
             }
         }
+        else
+            qDebug() << "Raw point triplet was unusable. Discarding combination";
     }
 
     qDebug() << "---------- Finished calculating center points ----------";
@@ -270,7 +281,7 @@ QPointF MainWindow::calcCircle()
     }
     else
     {
-        qDebug() << "ERROR: Center point list is empty!";
+        qWarning() << "ERROR: Center point list is empty!";
     }
 
     //Draw information on screen
@@ -296,6 +307,11 @@ QPointF MainWindow::calcCenter(QPointF a, QPointF b, QPointF c)
     double xDelta0 = b.x() - a.x();
     double yDelta1 = c.y() - b.y();
     double xDelta1 = c.x() - b.x();
+
+    Q_ASSERT(yDelta0 != 0);
+    Q_ASSERT(yDelta1 != 0);
+    Q_ASSERT(xDelta0 != 0);
+    Q_ASSERT(xDelta1 != 0);
 
     double slope0 = yDelta0/xDelta0;
     double slope1 = yDelta1/xDelta1;
@@ -362,7 +378,35 @@ double MainWindow::calcROM()    //calculate the Range of Motion
 
 void MainWindow::on_pbAnalyze_clicked()
 {
+    static bool reAnalyze = false;
+
+    if(reAnalyze)   //delete old analyzation
+    {
+        QList<QGraphicsItem *> list = scene->items();
+        foreach(QGraphicsItem *i, list)
+        {
+            QGraphicsEllipseItem *e = qgraphicsitem_cast<QGraphicsEllipseItem *>(i);
+            if(e)
+            {
+                if(e->brush().color() == QColor(0,255,0,64))
+                {
+                    scene->removeItem(i);
+                }
+            }
+            QGraphicsLineItem *l = qgraphicsitem_cast<QGraphicsLineItem *>(i);
+            if(l)
+            {
+                if(l->pen().color() == Qt::blue)
+                {
+                    scene->removeItem(i);
+                }
+            }
+        }
+    }
+
     calcROM();
+
+    reAnalyze = true;
 }
 
 double MainWindow::calcDistance(QPointF a, QPointF b)
@@ -402,4 +446,9 @@ QPointF MainWindow::calcAveragePoint(QList<QPointF> l)
     qDebug() << "Average point: " << avgPnt;
     qDebug() << "---------- Calculated average point ----------";
     return avgPnt;
+}
+
+int MainWindow::randomInt(int low, int high)
+{
+    return qrand() % ((high + 1) - low) + low;
 }
