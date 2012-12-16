@@ -241,9 +241,8 @@ QPointF MainWindow::calcCircle()
 
     qDebug() << "---------- Starting to calculate center points ----------";
     qDebug() << "dataListRaw count: " << dataListRaw.count();
-    for(int i= 0; i <dataListRaw.count() - 2;i++)
+    for(int i= 0; i < dataListRaw.count();i++)
     {
-        qDebug() << "Low: " << i << ", High: " << (i + 2);
         QPointF a = dataListRaw.at(i);
         QPointF b = dataListRaw.at(i+1);
         QPointF c = dataListRaw.at(i+2);
@@ -265,20 +264,13 @@ QPointF MainWindow::calcCircle()
 
     roughCenter = calcAveragePoint(roughCenterList);  //Calculate the rough average center point
 
-    QList<QPointF> centerList;
-
-    foreach(QPointF centerPoint, roughCenterList)
+    if(!roughCenterList.isEmpty())
     {
-        centerList.append(centerPoint);
-    }
-
-    if(!centerList.isEmpty())
-    {
-        center = calcAveragePoint(centerList);
+        center = calcAveragePoint(roughCenterList);
     }
     else
     {
-        qDebug() << "ERROR: Accurate center point list is empty!";
+        qDebug() << "ERROR: Center point list is empty!";
     }
 
     //Draw information on screen
