@@ -47,7 +47,7 @@ public slots:
     double calcDistance(QPoint a, QPoint b);    //calculate the distance between two points
     QPointF calcAveragePoint(QList<QPointF> l); //return the average point from a list of points
     int randomInt(int low, int high);
-    void clearOldAnalyzation();
+    void clearOldAnalysis();
 
 private slots:
     void drawDataFieldInformation();

@@ -231,15 +231,15 @@ void MainWindow::on_pbAnalyze_clicked()
 {
     static bool reAnalyze = false;
 
-    if(reAnalyze)   //delete old analyzation
+    if(reAnalyze)   //delete old analysis
     {
-        clearOldAnalyzation();
+        clearOldAnalysis();
     }
 
     double romDegrees = 0;
     for(int i=0;i<10;i++)
     {
-        clearOldAnalyzation();
+        clearOldAnalysis();
         romDegrees = romDegrees + calcROM();
     }
 
@@ -254,7 +254,7 @@ void MainWindow::on_pbAnalyze_clicked()
     reAnalyze = true;
 }
 
-void MainWindow::clearOldAnalyzation()
+void MainWindow::clearOldAnalysis()
 {
     QList<QGraphicsItem *> list = scene->items();
     foreach(QGraphicsItem *i, list)
