@@ -47,9 +47,9 @@ public slots:
     double calcDistance(QPoint a, QPoint b);    //calculate the distance between two points
     QPointF calcAveragePoint(QList<QPointF> l); //return the average point from a list of points
     int randomInt(int low, int high);
-private slots:
-    void on_pbCalibrate_clicked();
+    void clearOldAnalyzation();
 
+private slots:
     void drawDataFieldInformation();
 
     void on_pbSaveData_clicked();
@@ -57,6 +57,8 @@ private slots:
     void on_pbSettings_clicked();
 
     void on_pbAnalyze_clicked();
+
+    void on_pbReset_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -81,6 +83,8 @@ private:
     QList<QPoint> dataListRaw;
 
     RangeOfMotion rom;
+
+    QFont dataFieldFont;
 
 };
 

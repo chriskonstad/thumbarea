@@ -8,6 +8,7 @@
 #include <math.h>
 #include <QTime>
 #include <QApplication>
+#include <QRegExp>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -40,6 +41,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QTime time = QTime::currentTime();
     qsrand((uint)time.msec());
 
+    dataFieldFont = scene->font();
+    dataFieldFont.setPointSize(18);
+
     timer->start(5);
 }
 
@@ -68,22 +72,12 @@ void MainWindow::updatePos()
     }
 }
 
-void MainWindow::calcPPCM()
-{
-    calc->calculatePPCM(this->width(), this->height(), diagonalCMDouble);
-}
-
-void MainWindow::on_pbCalibrate_clicked()
+void MainWindow::on_pbReset_clicked()
 {
     calcPPCM();
 
     loadSettings();
     dataListRaw.clear();
-
-    if(ui->pbCalibrate->text() != "Reset")
-    {
-        ui->pbCalibrate->setText("Reset");
-    }
 }
 
 void MainWindow::drawDataFieldInformation()
@@ -106,18 +100,21 @@ void MainWindow::drawDataFieldInformation()
     //Add date to data field
     QDate date;
     QGraphicsSimpleTextItem * dateItem = new QGraphicsSimpleTextItem;
+    dateItem->setFont(dataFieldFont);
     dateItem->setText(date.currentDate().toString("MMM dd yyyy"));
     dateItem->setPos(0,0);
     scene->addItem(dateItem);
 
     //Add patient info to data field
     QGraphicsSimpleTextItem * patientInfo = new QGraphicsSimpleTextItem;
+    patientInfo->setFont(dataFieldFont);
     patientInfo->setText(patientInfoString);
     patientInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50, 0);
     scene->addItem(patientInfo);
 
     //Add test info to data field
     QGraphicsSimpleTextItem * testInfo = new QGraphicsSimpleTextItem;
+    testInfo->setFont(dataFieldFont);
     testInfo->setText(testInfoString);
     testInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50 + patientInfo->boundingRect().width() + 50, 0);
     scene->addItem(testInfo);
@@ -127,6 +124,7 @@ void MainWindow::drawDataFieldInformation()
     trialString.append("Trial: ");
     trialString.append(QString::number(picIndex).rightJustified(2,'0'));
     QGraphicsSimpleTextItem * trialInfo = new QGraphicsSimpleTextItem;
+    trialInfo->setFont(dataFieldFont);
     trialInfo->setText(trialString);
     trialInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50 + patientInfo->boundingRect().width() + 50 + testInfo->boundingRect().width() + 50, 0);
     scene->addItem(trialInfo);
@@ -175,16 +173,6 @@ void MainWindow::on_pbSaveData_clicked()
     timer->start(); //resume the data-gathering
 }
 
-void MainWindow::loadSettings()
-{
-    patientInfoString = settings->value("patientInfoString", "Patient Info").toString();
-    testInfoString = settings->value("testInfoString", "Test Info").toString();
-    diagonalCMDouble = settings->value("diagonalCM", 1).toDouble();
-    qDebug() << "Settings loaded in MainWindow";
-
-    drawDataFieldInformation(); //refresh the display to reflect updates
-}
-
 void MainWindow::on_pbSettings_clicked()
 {
     loadSettings(); //fix CTD bug?
@@ -197,6 +185,16 @@ void MainWindow::on_pbSettings_clicked()
     connect(settingsDialog, SIGNAL(rejected()), timer, SLOT(start()));
     timer->stop();  //pause the data-gathering
     settingsDialog->exec();
+}
+
+void MainWindow::loadSettings()
+{
+    patientInfoString = settings->value("patientInfoString", "Patient Info").toString();
+    testInfoString = settings->value("testInfoString", "Test Info").toString();
+    diagonalCMDouble = settings->value("diagonalCM", 1).toDouble();
+    qDebug() << "Settings loaded in MainWindow";
+
+    drawDataFieldInformation(); //refresh the display to reflect updates
 }
 
 void MainWindow::resetPicIndex()
@@ -230,6 +228,118 @@ void MainWindow::diagonalCM(double cm)
     qDebug() << "diagonalCMDouble copied from Settings dialog";
 }
 
+void MainWindow::on_pbAnalyze_clicked()
+{
+    static bool reAnalyze = false;
+
+    if(reAnalyze)   //delete old analyzation
+    {
+        clearOldAnalyzation();
+    }
+
+    double romDegrees = 0;
+    for(int i=0;i<10;i++)
+    {
+        clearOldAnalyzation();
+        romDegrees = romDegrees + calcROM();
+    }
+
+    romDegrees = romDegrees/10;
+
+
+    QGraphicsSimpleTextItem *romDisplay = new QGraphicsSimpleTextItem(0, scene);
+    romDisplay->setFont(dataFieldFont);
+    romDisplay->setText("Range of motion: " + QString::number(romDegrees, 'f', 1) + " degrees");
+    romDisplay->setPos(ui->graphicsView->width()/2 - romDisplay->boundingRect().width()/2, ui->graphicsView->height()/2 - romDisplay->boundingRect().height()/2);
+
+    reAnalyze = true;
+}
+
+void MainWindow::clearOldAnalyzation()
+{
+    QList<QGraphicsItem *> list = scene->items();
+    foreach(QGraphicsItem *i, list)
+    {
+        QGraphicsEllipseItem *e = qgraphicsitem_cast<QGraphicsEllipseItem *>(i);
+        if(e)
+        {
+            if(e->brush().color() == QColor(0,255,0,64))
+            {
+                scene->removeItem(i);
+            }
+        }
+        QGraphicsLineItem *l = qgraphicsitem_cast<QGraphicsLineItem *>(i);
+        if(l)
+        {
+            if(l->pen().color() == Qt::blue)
+            {
+                scene->removeItem(i);
+            }
+        }
+        QGraphicsSimpleTextItem *t = qgraphicsitem_cast<QGraphicsSimpleTextItem *>(i);
+        if(t)
+        {
+            if(t->text().contains("Range"))
+            {
+                scene->removeItem(i);
+            }
+        }
+    }
+}
+
+double MainWindow::calcROM()    //calculate the Range of Motion
+{
+    if(dataListRaw.count())
+    {
+        double romDegrees = -1;
+
+        calcCircle();
+
+        QPointF furthestPoint = QPointF(-1, -1);
+        QPoint lastPoint = QPoint(0,0);
+
+        foreach(QPoint p, dataListRaw)  //find the furthest point down
+        {
+            if(p.y() >= lastPoint.y())
+            {
+                furthestPoint.setX(p.x());
+                furthestPoint.setY(p.y());
+                lastPoint = p;
+            }
+            else
+            {
+
+            }
+        }
+
+        scene->addLine(rom.getCenterPoint().x(), rom.getCenterPoint().y(), furthestPoint.x(), furthestPoint.y(), QPen(Qt::blue));
+        qDebug() << "Furthest Point: " << furthestPoint;
+
+        QPointF verticalPoint = rom.getCenterPoint();
+
+        verticalPoint.setY(verticalPoint.y() - rom.getRadius());
+        scene->addLine(rom.getCenterPoint().x(), rom.getCenterPoint().y(), verticalPoint.x(), verticalPoint.y(), QPen(Qt::blue));
+        qDebug() << "Vertical Point: " << verticalPoint;
+
+        double deltaX = verticalPoint.x() - furthestPoint.x();
+        double deltaY = verticalPoint.y() - furthestPoint.y();
+
+        double chordLength = sqrt( (deltaX * deltaX) + (deltaY * deltaY) );
+
+        double thetaR = qAcos( ( (chordLength * chordLength) - (2 * (rom.getRadius() * rom.getRadius())) ) / ( -2 * (rom.getRadius() * rom.getRadius())) );
+
+        double thetaD = 180.0 * thetaR / M_PI;
+
+        romDegrees = thetaD;
+
+        qDebug() << "Range of Motion degrees: " << romDegrees;
+
+        return romDegrees;
+    }
+    else
+        return -1;
+}
+
 QPointF MainWindow::calcCircle()
 {
     //Prep work first, including gathering of data points
@@ -237,63 +347,69 @@ QPointF MainWindow::calcCircle()
     center.setX(-1);
     center.setY(-1);
 
-    QPointF roughCenter;
-    roughCenter.setX(-1);
-    roughCenter.setY(-1);
-
-    int sectionBreak = dataListRaw.count()/10;  //break the datalist into 10 sections
-
-    QList<QPointF> roughCenterList;  //hold all calculated center points
-
-    qDebug() << "---------- Starting to calculate center points ----------";
-    QList<QPoint> dataListTemp = dataListRaw;
-    while(dataListTemp.count() > 3)
+    if(dataListRaw.count())
     {
-        int indexA = randomInt(0, dataListTemp.count() - 1);
-        QPointF a = dataListTemp.takeAt(indexA);
-        int indexB = randomInt(0, dataListTemp.count() - 1);
-        QPointF b = dataListTemp.takeAt(indexB);
-        int indexC = randomInt(0, dataListTemp.count() - 1);
-        QPointF c = dataListTemp.takeAt(indexC);
-        if(a.x() != b.x() && b.x() != c.x() && a.x() != c.x() && a.y() != b.y() && b.y() != c.y() && a.y() != c.y())
+        QPointF roughCenter;
+        roughCenter.setX(-1);
+        roughCenter.setY(-1);
+
+        QList<QPointF> roughCenterList;  //hold all calculated center points
+
+        qDebug() << "---------- Starting to calculate center points ----------";
+        QList<QPoint> dataListTemp = dataListRaw;
+        while(dataListTemp.count() > 3)
         {
-            QPointF cP = calcCenter(a,b,c);
-            if(cP.x() < - 3000 || cP.x() > 3000 || cP.y() < 0 || cP.y() > 3000)
+            int indexA = randomInt(0, dataListTemp.count() - 1);
+            QPointF a = dataListTemp.takeAt(indexA);
+            int indexB = randomInt(0, dataListTemp.count() - 1);
+            QPointF b = dataListTemp.takeAt(indexB);
+            int indexC = randomInt(0, dataListTemp.count() - 1);
+            QPointF c = dataListTemp.takeAt(indexC);
+            if(a.x() != b.x() && b.x() != c.x() && a.x() != c.x() && a.y() != b.y() && b.y() != c.y() && a.y() != c.y())
             {
-                qDebug() << "Ignoring centerpoint at " << cP << " for being too far away from a reasonable value!";
+                QPointF cP = calcCenter(a,b,c);
+                if(cP.x() < - 3000 || cP.x() > 3000 || cP.y() < 0 || cP.y() > 3000)
+                {
+                    qDebug() << "Ignoring centerpoint at " << cP << " for being too far away from a reasonable value!";
+                }
+                else
+                {
+                    roughCenterList.append(cP);
+                }
             }
             else
-            {
-                roughCenterList.append(cP);
-            }
+                qDebug() << "Raw point triplet was unusable. Discarding combination";
+        }
+
+        qDebug() << "---------- Finished calculating center points ----------";
+
+        roughCenter = calcAveragePoint(roughCenterList);  //Calculate the rough average center point
+
+        if(!roughCenterList.isEmpty())
+        {
+            center = calcAveragePoint(roughCenterList);
         }
         else
-            qDebug() << "Raw point triplet was unusable. Discarding combination";
+        {
+            qWarning() << "ERROR: Center point list is empty!";
+        }
+
+        //Draw information on screen
+        double radius = 0;
+        foreach(QPointF p, dataListRaw)
+        {
+            radius = radius + calcDistance(center, p);
+        }
+        radius = radius / (double)dataListRaw.count();
+
+        scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(QColor(0,255,0,64)));
+
+        rom.setRadius((double)radius);
+        rom.setCenterPoint(center);
+
+        qDebug() << "Radius (px): " << radius;
+        qDebug() << "PPCM: " << calc->getPPCM();
     }
-
-    qDebug() << "---------- Finished calculating center points ----------";
-
-    roughCenter = calcAveragePoint(roughCenterList);  //Calculate the rough average center point
-
-    if(!roughCenterList.isEmpty())
-    {
-        center = calcAveragePoint(roughCenterList);
-    }
-    else
-    {
-        qWarning() << "ERROR: Center point list is empty!";
-    }
-
-    //Draw information on screen
-    QPointF testPoint = dataListRaw.at(sectionBreak*3);
-    int radius = sqrt( ((center.x() - testPoint.x()) * (center.x() - testPoint.x())) + ((center.y() - testPoint.y()) * (center.y() - testPoint.y())) );
-    scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(QColor(0,255,0,64)));
-
-    rom.setRadius((double)radius);
-    rom.setCenterPoint(center);
-
-    qDebug() << "Radius (px): " << radius;
-    qDebug() << "PPCM: " << calc->getPPCM();
 
     return center;
 }
@@ -326,87 +442,6 @@ QPointF MainWindow::calcCenter(QPointF a, QPointF b, QPointF c)
 
     qDebug() << "Calculated center here: " << centerTemp;
     return centerTemp;
-}
-
-double MainWindow::calcROM()    //calculate the Range of Motion
-{
-    double romDegrees = -1;
-
-    calcCircle();
-
-    QPointF furthestPoint = QPointF(-1, -1);
-    QPoint lastPoint = QPoint(0,0);
-
-    foreach(QPoint p, dataListRaw)  //find the furthest point down
-    {
-        if(p.y() >= lastPoint.y())
-        {
-            furthestPoint.setX(p.x());
-            furthestPoint.setY(p.y());
-            lastPoint = p;
-        }
-        else
-        {
-
-        }
-    }
-
-    scene->addLine(rom.getCenterPoint().x(), rom.getCenterPoint().y(), furthestPoint.x(), furthestPoint.y(), QPen(Qt::blue));
-    qDebug() << "Furthest Point: " << furthestPoint;
-
-    QPointF verticalPoint = rom.getCenterPoint();
-
-    verticalPoint.setY(verticalPoint.y() - rom.getRadius());
-    scene->addLine(rom.getCenterPoint().x(), rom.getCenterPoint().y(), verticalPoint.x(), verticalPoint.y(), QPen(Qt::blue));
-    qDebug() << "Vertical Point: " << verticalPoint;
-
-    double deltaX = verticalPoint.x() - furthestPoint.x();
-    double deltaY = verticalPoint.y() - furthestPoint.y();
-
-    double chordLength = sqrt( (deltaX * deltaX) + (deltaY * deltaY) );
-
-    double thetaR = qAcos( ( (chordLength * chordLength) - (2 * (rom.getRadius() * rom.getRadius())) ) / ( -2 * (rom.getRadius() * rom.getRadius())) );
-
-    double thetaD = 180.0 * thetaR / M_PI;
-
-    romDegrees = thetaD;
-
-    qDebug() << "Range of Motion degrees: " << romDegrees;
-
-    return romDegrees;
-}
-
-void MainWindow::on_pbAnalyze_clicked()
-{
-    static bool reAnalyze = false;
-
-    if(reAnalyze)   //delete old analyzation
-    {
-        QList<QGraphicsItem *> list = scene->items();
-        foreach(QGraphicsItem *i, list)
-        {
-            QGraphicsEllipseItem *e = qgraphicsitem_cast<QGraphicsEllipseItem *>(i);
-            if(e)
-            {
-                if(e->brush().color() == QColor(0,255,0,64))
-                {
-                    scene->removeItem(i);
-                }
-            }
-            QGraphicsLineItem *l = qgraphicsitem_cast<QGraphicsLineItem *>(i);
-            if(l)
-            {
-                if(l->pen().color() == Qt::blue)
-                {
-                    scene->removeItem(i);
-                }
-            }
-        }
-    }
-
-    calcROM();
-
-    reAnalyze = true;
 }
 
 double MainWindow::calcDistance(QPointF a, QPointF b)
@@ -451,4 +486,9 @@ QPointF MainWindow::calcAveragePoint(QList<QPointF> l)
 int MainWindow::randomInt(int low, int high)
 {
     return qrand() % ((high + 1) - low) + low;
+}
+
+void MainWindow::calcPPCM()
+{
+    calc->calculatePPCM(this->width(), this->height(), diagonalCMDouble);
 }
