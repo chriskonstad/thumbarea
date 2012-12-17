@@ -8,7 +8,6 @@
 #include <math.h>
 #include <QTime>
 #include <QApplication>
-#include <QRegExp>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
