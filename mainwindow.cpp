@@ -44,6 +44,8 @@ MainWindow::MainWindow(QWidget *parent) :
     dataFieldFont.setPixelSize(18);
 
     timer->start(5);
+
+    on_pbSettings_clicked();    //default to opening up the settings dialog
 }
 
 MainWindow::~MainWindow()
@@ -147,6 +149,7 @@ void MainWindow::on_pbSaveData_clicked()
         if(photoDir.mkdir("/mnt/sdcard/thumbdata") == false)    //if couldn't make dir
         {
             errorDialog = new ErrorDialog(this);
+            connect(errorDialog, SIGNAL(finished(int)), errorDialog, SLOT(deleteLater()));
             errorDialog->exec();
             qDebug() << "Error: Could not find or create the folder to save the data in.";
         }
@@ -157,12 +160,14 @@ void MainWindow::on_pbSaveData_clicked()
     if(pixMap.save(fileName))
     {
         savedDialog = new SavedDialog(this);
+        connect(savedDialog, SIGNAL(finished(int)), savedDialog, SLOT(deleteLater()));
         savedDialog->exec();
         qDebug() << "Info: Picture saved as " + fileName;
     }
     else
     {
         errorDialog = new ErrorDialog(this);
+        connect(errorDialog, SIGNAL(finished(int)), errorDialog, SLOT(deleteLater()));
         errorDialog->exec();
         qDebug() << "Error: Couldn't save the pixmap";
     }
@@ -182,6 +187,7 @@ void MainWindow::on_pbSettings_clicked()
     connect(settingsDialog, SIGNAL(accepted()), this, SLOT(resetPicIndex()));
     connect(settingsDialog, SIGNAL(accepted()), timer, SLOT(start()));
     connect(settingsDialog, SIGNAL(rejected()), timer, SLOT(start()));
+    connect(settingsDialog, SIGNAL(finished(int)), settingsDialog, SLOT(deleteLater()));
     timer->stop();  //pause the data-gathering
     settingsDialog->exec();
 }
