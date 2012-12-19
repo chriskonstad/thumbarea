@@ -188,6 +188,7 @@ void MainWindow::on_pbSettings_clicked()
     connect(settingsDialog, SIGNAL(accepted()), timer, SLOT(start()));
     connect(settingsDialog, SIGNAL(rejected()), timer, SLOT(start()));
     connect(settingsDialog, SIGNAL(finished(int)), settingsDialog, SLOT(deleteLater()));
+    connect(settingsDialog, SIGNAL(destroyed()), this, SLOT(on_pbReset_clicked()));
     timer->stop();  //pause the data-gathering
     settingsDialog->exec();
 }
