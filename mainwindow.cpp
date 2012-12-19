@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
     qsrand((uint)time.msec());
 
     dataFieldFont = scene->font();
-    dataFieldFont.setPointSize(18);
+    dataFieldFont.setPixelSize(18);
 
     timer->start(5);
 }
