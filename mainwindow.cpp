@@ -17,11 +17,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QString versionString;
     versionString.append(QApplication::applicationVersion());
-    qDebug() << versionString;
-    ui->labVersion->setText("Version: " + versionString);
+    qDebug() << "Version: " << versionString;
     cursor = new QCursor();
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(updatePos()));
+
+    connect(ui->actionReset, SIGNAL(triggered()), this, SLOT(on_pbReset_clicked()));
+    connect(ui->actionAnalyze, SIGNAL(triggered()), this, SLOT(on_pbAnalyze_clicked()));
+    connect(ui->actionSave_Data, SIGNAL(triggered()), this, SLOT(on_pbSaveData_clicked()));
+    connect(ui->actionSettings, SIGNAL(triggered()), this, SLOT(on_pbSettings_clicked()));
 
     scene = new QGraphicsScene(ui->graphicsView);
     ui->graphicsView->setScene(scene);
@@ -103,21 +107,21 @@ void MainWindow::drawDataFieldInformation()
     QGraphicsSimpleTextItem * dateItem = new QGraphicsSimpleTextItem;
     dateItem->setFont(dataFieldFont);
     dateItem->setText(date.currentDate().toString("MMM dd yyyy"));
-    dateItem->setPos(0,0);
+    dateItem->setPos(5,5);
     scene->addItem(dateItem);
 
     //Add patient info to data field
     QGraphicsSimpleTextItem * patientInfo = new QGraphicsSimpleTextItem;
     patientInfo->setFont(dataFieldFont);
     patientInfo->setText(patientInfoString);
-    patientInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50, 0);
+    patientInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50, 5);
     scene->addItem(patientInfo);
 
     //Add test info to data field
     QGraphicsSimpleTextItem * testInfo = new QGraphicsSimpleTextItem;
     testInfo->setFont(dataFieldFont);
     testInfo->setText(testInfoString);
-    testInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50 + patientInfo->boundingRect().width() + 50, 0);
+    testInfo->setPos(5, dateItem->boundingRect().y() + dateItem->boundingRect().height() + 5);
     scene->addItem(testInfo);
 
     //Add trial (index) number
@@ -127,7 +131,7 @@ void MainWindow::drawDataFieldInformation()
     QGraphicsSimpleTextItem * trialInfo = new QGraphicsSimpleTextItem;
     trialInfo->setFont(dataFieldFont);
     trialInfo->setText(trialString);
-    trialInfo->setPos(dateItem->boundingRect().x() + dateItem->boundingRect().width() + 50 + patientInfo->boundingRect().width() + 50 + testInfo->boundingRect().width() + 50, 0);
+    trialInfo->setPos(5 + testInfo->boundingRect().width() + 50, dateItem->boundingRect().y() + dateItem->boundingRect().height() + 5);
     scene->addItem(trialInfo);
 
     QList<QGraphicsItem *> items = scene->items();

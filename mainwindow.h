@@ -49,7 +49,6 @@ public slots:
     int randomInt(int low, int high);
     void clearOldAnalysis();
 
-private slots:
     void drawDataFieldInformation();
 
     void on_pbSaveData_clicked();
