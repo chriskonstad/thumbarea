@@ -85,6 +85,7 @@ private:
 
     QFont dataFieldFont;
 
+
 };
 
 #endif // MAINWINDOW_H

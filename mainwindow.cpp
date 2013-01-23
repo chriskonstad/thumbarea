@@ -178,6 +178,7 @@ void MainWindow::on_pbSaveData_clicked()
 
     picIndex++;
 
+    QTimer::singleShot(10, this, SLOT(drawDataFieldInformation())); //workaround for bug where data point would be captured through the dialog
     timer->start(); //resume the data-gathering
 }
 
@@ -204,7 +205,7 @@ void MainWindow::loadSettings()
     diagonalCMDouble = settings->value("diagonalCM", 1).toDouble();
     qDebug() << "Settings loaded in MainWindow";
 
-    drawDataFieldInformation(); //refresh the display to reflect updates
+    QTimer::singleShot(10, this, SLOT(drawDataFieldInformation())); //workaround for bug where data point would be captured through the dialog
 }
 
 void MainWindow::resetPicIndex()
