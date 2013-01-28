@@ -354,6 +354,31 @@ double MainWindow::calcROM()    //calculate the Range of Motion
 
 QList<QPoint> MainWindow::removeOutliers(QList<QPoint> data)    //remove the outlying data points
 {
+    //Remove touches possibly made by the palm of the hand that is being tested
+    QPoint averagePoint = calcAveragePoint(data);
+    if(data[0].x() < this->width()/2)  //if the first point is on the left side of the screen, then the left hand is being tested
+    {
+        foreach(QPoint p, data)
+        {
+            if(p.x() < averagePoint.x() && p.y() > averagePoint.y())    //if in quadrant 3 if (0,0) is the averagePoint
+            {
+                data.removeAll(p);
+                qDebug() << "Removed point because it is in the off-limits quadrant: " << p;
+            }
+        }
+    }
+    else
+    {
+        foreach(QPoint p, data)
+        {
+            if(p.x() > averagePoint.x() && p.y() > averagePoint.y())    //if in quadrant 4 if (0,0) is the averagePoint
+            {
+                data.removeAll(p);
+                qDebug() << "Removed point because it is in the off-limits quadrant: " << p;
+            }
+        }
+    }
+
     //Find the proper distance range of values (http://in.answers.yahoo.com/question/index?qid=20080708120033AAZo21m)
     QList<double> distList;
     for(int i=0;i<data.count()-1;i++)
@@ -522,6 +547,25 @@ QPointF MainWindow::calcAveragePoint(QList<QPointF> l)
 
     avgPnt.setX(avgPnt.x() / (double)l.count());
     avgPnt.setY(avgPnt.y() / (double)l.count());
+    qDebug() << "Average point: " << avgPnt;
+    qDebug() << "---------- Calculated average point ----------";
+    return avgPnt;
+}
+
+QPoint MainWindow::calcAveragePoint(QList<QPoint> l)
+{
+
+    qDebug() << "---------- Starting to calculate average point ----------";
+    QPoint avgPnt = QPoint(0,0);
+
+    foreach(QPoint p, l)
+    {
+        avgPnt.setX(avgPnt.x() + p.x());
+        avgPnt.setY(avgPnt.y() + p.y());
+    }
+
+    avgPnt.setX(avgPnt.x() / l.count());
+    avgPnt.setY(avgPnt.y() / l.count());
     qDebug() << "Average point: " << avgPnt;
     qDebug() << "---------- Calculated average point ----------";
     return avgPnt;
