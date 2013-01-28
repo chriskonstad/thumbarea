@@ -27,6 +27,7 @@ signals:
 
 private:
     Ui::SettingsDialog *ui;
+
 };
 
 #endif // SETTINGSDIALOG_H

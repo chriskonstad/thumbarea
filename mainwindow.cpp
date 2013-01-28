@@ -304,12 +304,13 @@ double MainWindow::calcROM()    //calculate the Range of Motion
     {
         double romDegrees = -1;
 
-        calcCircle();
+        QList<QPoint> usablePoints = removeOutliers(dataListRaw);
+        calcCircle(usablePoints);
 
         QPointF furthestPoint = QPointF(-1, -1);
         QPoint lastPoint = QPoint(0,0);
 
-        foreach(QPoint p, dataListRaw)  //find the furthest point down
+        foreach(QPoint p, usablePoints)  //find the furthest point down
         {
             if(p.y() >= lastPoint.y())
             {
@@ -351,23 +352,57 @@ double MainWindow::calcROM()    //calculate the Range of Motion
         return -1;
 }
 
-QPointF MainWindow::calcCircle()
+QList<QPoint> MainWindow::removeOutliers(QList<QPoint> data)    //remove the outlying data points
+{
+    //Find the proper distance range of values (http://in.answers.yahoo.com/question/index?qid=20080708120033AAZo21m)
+    QList<double> distList;
+    for(int i=0;i<data.count()-1;i++)
+    {
+        distList.append(calcDistance(data[i], data[i+1]));
+    }
+    qSort(distList.begin(), distList.end(), qLess<double>());   //sort from least to greatest
+    double q1 = distList.at(distList.count()/4);    //lower quartile
+    double q3 = distList.at(3*distList.count()/4);  //upper quartile
+    double iQR = q3 - q1;   //InterQuartileRange
+    double range = 1.5 * iQR;   //statistically allowed range
+    double maxDistance = range + q3;    //max distance allowed between a point and it's nearest neighbor
+
+    //Create a list of points that have a neighbor within the range of maxDistance
+    QList<QPoint> goodList;    //list of data points that are NOT outliers
+    foreach(QPoint point, data)
+    {
+        QList<QPoint> mirror = data;
+        if(mirror.contains(point))  //remove any copies of this data point (there shouldn't be any, but we should check anyways)
+        {
+            mirror.removeAll(point);
+        }
+        QList<double> distancesToOtherPoints;
+        foreach(QPoint otherPoint, mirror)
+        {
+            distancesToOtherPoints.append(calcDistance(point, otherPoint));
+        }
+        qSort(distancesToOtherPoints.begin(), distancesToOtherPoints.end(), qLess<double>());   //create ascending list of distances between point and all other points
+        if(distancesToOtherPoints.at(0) <= maxDistance)  //check if the smallest distance between point and another point is less than the maxDistance allowed
+        {
+            goodList.append(point); //add the point to the good list
+        }
+    }
+    return goodList;
+}
+
+QPointF MainWindow::calcCircle(QList<QPoint> data)
 {
     //Prep work first, including gathering of data points
     QPointF center;
     center.setX(-1);
     center.setY(-1);
 
-    if(dataListRaw.count())
+    if(data.count())
     {
-        QPointF roughCenter;
-        roughCenter.setX(-1);
-        roughCenter.setY(-1);
-
         QList<QPointF> roughCenterList;  //hold all calculated center points
 
         qDebug() << "---------- Starting to calculate center points ----------";
-        QList<QPoint> dataListTemp = dataListRaw;
+        QList<QPoint> dataListTemp = data;
         while(dataListTemp.count() > 3)
         {
             int indexA = randomInt(0, dataListTemp.count() - 1);
@@ -394,8 +429,6 @@ QPointF MainWindow::calcCircle()
 
         qDebug() << "---------- Finished calculating center points ----------";
 
-        roughCenter = calcAveragePoint(roughCenterList);  //Calculate the rough average center point
-
         if(!roughCenterList.isEmpty())
         {
             center = calcAveragePoint(roughCenterList);
@@ -407,11 +440,11 @@ QPointF MainWindow::calcCircle()
 
         //Draw information on screen
         double radius = 0;
-        foreach(QPointF p, dataListRaw)
+        foreach(QPointF p, data)
         {
             radius = radius + calcDistance(center, p);
         }
-        radius = radius / (double)dataListRaw.count();
+        radius = radius / (double)data.count();
 
         scene->addEllipse(center.x()-radius, center.y()-radius, 2 * radius, 2 * radius, QPen(Qt::black), QBrush(QColor(0,255,0,64)));
 
