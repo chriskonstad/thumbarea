@@ -20,14 +20,16 @@ SOURCES += main.cpp\
     errordialog.cpp \
     saveddialog.cpp \
     settingsdialog.cpp \
-    rangeofmotion.cpp
+    rangeofmotion.cpp \
+    QProgressIndicator.cpp
 
 HEADERS  += mainwindow.h \
     qpixelcalculator.h \
     errordialog.h \
     saveddialog.h \
     settingsdialog.h \
-    rangeofmotion.h
+    rangeofmotion.h \
+    QProgressIndicator.h
 
 FORMS    += mainwindow.ui \
     errordialog.ui \
