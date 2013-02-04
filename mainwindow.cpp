@@ -26,7 +26,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <math.h>
 #include <QTime>
 #include <QApplication>
-#include "QProgressIndicator.h"
 #include <QLabel>
 #include <QFontMetrics>
 
@@ -295,20 +294,9 @@ void MainWindow::on_pbAnalyze_clicked()
         }
 
     }
-    QProgressIndicator* indicator = new QProgressIndicator(progressFrame);
-    QPalette palette = indicator->palette();
-    palette.setBrush(QPalette::Window, ui->graphicsView->palette().base());    //necessary
-    indicator->setPalette(palette);
-    progressFrame->setPalette(palette);
     boxLayout->addWidget(label);
-    boxLayout->addWidget(indicator);
     progressFrame->setLayout(boxLayout);
-    indicator->setColor(Qt::gray);
     progressFrame->show();
-    qDebug() << "Showing progressFrame!";
-    indicator->startAnimation();
-
-    //TODO:: ANIMATE THE INDICATOR DURING CALCULATIONS
 
     //Slight delay which makes sure the QFrame shows up before the calculations start
     QTime dieTime = QTime::currentTime().addMSecs(5);
