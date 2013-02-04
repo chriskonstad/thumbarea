@@ -51,6 +51,9 @@ public:
 
     QPixelCalculator *calc;
 
+signals:
+    void analysisCompleted();
+
 public slots:
     void updatePos();
     void calcPPCM();

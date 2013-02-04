@@ -26,6 +26,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <math.h>
 #include <QTime>
 #include <QApplication>
+#include "QProgressIndicator.h"
+#include <QLabel>
+#include <QFontMetrics>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -259,6 +262,61 @@ void MainWindow::diagonalCM(double cm)
 
 void MainWindow::on_pbAnalyze_clicked()
 {
+    QFrame* progressFrame = new QFrame( this, Qt::Popup);
+    progressFrame->setFrameStyle(QFrame::Box);
+    progressFrame->setFrameShadow(QFrame::Raised);
+    int frameWidth = this->width()/2;
+    int frameHeight = frameWidth;
+    int frameX = (this->width()/2) - (frameWidth/2);
+    int frameY = (ui->graphicsView->height()/2) - (frameHeight/2) + ui->graphicsView->y();
+    progressFrame->setGeometry(frameX, frameY, frameWidth, frameHeight);
+    QVBoxLayout* boxLayout = new QVBoxLayout();
+    QLabel* label = new QLabel();
+    label->setMaximumWidth(frameWidth);
+    QString string("Analyzing...");
+    label->setText(string);
+    QFont font = label->font();
+    font.setPointSize(72);  //set to a large number
+    label->setFont(font);
+    //Resize the font in the dialog
+    while(true)
+    {
+        QFontMetrics metrics(font);
+        if(metrics.width(string) > label->width())
+        {
+            font = label->font();
+            font.setPointSize(font.pointSize()-1);
+            label->setFont(font);
+            label->adjustSize();
+        }
+        else
+        {
+            break;
+        }
+
+    }
+    QProgressIndicator* indicator = new QProgressIndicator(progressFrame);
+    QPalette palette = indicator->palette();
+    palette.setBrush(QPalette::Window, ui->graphicsView->palette().base());    //necessary
+    indicator->setPalette(palette);
+    progressFrame->setPalette(palette);
+    boxLayout->addWidget(label);
+    boxLayout->addWidget(indicator);
+    progressFrame->setLayout(boxLayout);
+    indicator->setColor(Qt::gray);
+    progressFrame->show();
+    qDebug() << "Showing progressFrame!";
+    indicator->startAnimation();
+
+    //TODO:: ANIMATE THE INDICATOR DURING CALCULATIONS
+
+    //Slight delay which makes sure the QFrame shows up before the calculations start
+    QTime dieTime = QTime::currentTime().addMSecs(5);
+    while(QTime::currentTime()< dieTime)
+    {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    }
+
     static bool reAnalyze = false;
 
     if(reAnalyze)   //delete old analysis
@@ -282,6 +340,8 @@ void MainWindow::on_pbAnalyze_clicked()
     romDisplay->setPos(ui->graphicsView->width()/2 - romDisplay->boundingRect().width()/2, ui->graphicsView->height()/2 - romDisplay->boundingRect().height()/2);
 
     reAnalyze = true;
+    progressFrame->deleteLater();
+    emit analysisCompleted();
 }
 
 void MainWindow::clearOldAnalysis()
