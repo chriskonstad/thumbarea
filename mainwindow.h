@@ -109,7 +109,7 @@ private:
 
     QFont dataFieldFont;
 
-
+    QGraphicsPixmapItem *indicator;
 };
 
 #endif // MAINWINDOW_H

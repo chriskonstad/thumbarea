@@ -154,6 +154,22 @@ void MainWindow::drawDataFieldInformation()
     trialInfo->setPos(5 + testInfo->boundingRect().width() + 50, dateItem->boundingRect().y() + dateItem->boundingRect().height() + 5);
     scene->addItem(trialInfo);
 
+    //Add swipe indicator
+    QPixmap pixmap(":/SwipeArrows.png");
+    indicator = scene->addPixmap(pixmap);
+    //Scale
+    double scaleFactor = 1.0;
+    int maxWidth = scene->width();
+    while(indicator->mapRectToScene(indicator->boundingRect()).width() > maxWidth)
+    {
+        qDebug() << "Resizing vector graphic for swipe arrows";
+        indicator->scale(scaleFactor,scaleFactor);
+        scaleFactor = scaleFactor - 0.1;
+    }
+    indicator->setX(scene->width()/2 - indicator->mapRectToScene(indicator->boundingRect()).width()/2);
+    indicator->setY(scene->height()/2 - indicator->mapRectToScene(indicator->boundingRect()).height()/2);
+
+
     QList<QGraphicsItem *> items = scene->items();
     foreach(QGraphicsItem *i, items)
     {
@@ -261,6 +277,12 @@ void MainWindow::diagonalCM(double cm)
 
 void MainWindow::on_pbAnalyze_clicked()
 {
+    if(indicator)   //delete the swipe arrow indicators before analyzing
+    {
+        delete indicator;
+        indicator = 0;  //make it a null pointer
+    }
+
     QFrame* progressFrame = new QFrame( this, Qt::Popup);
     progressFrame->setFrameStyle(QFrame::Box);
     progressFrame->setFrameShadow(QFrame::Raised);
@@ -366,7 +388,7 @@ void MainWindow::clearOldAnalysis()
 
 double MainWindow::calcROM()    //calculate the Range of Motion
 {
-    if(dataListRaw.count())
+    if(dataListRaw.count() > 10)    //need some data points, 10 is an arbitrary value that *should* be large enough, but may not be in certain cases
     {
         double romDegrees = -1;
 

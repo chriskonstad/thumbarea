@@ -95,6 +95,9 @@ OTHER_FILES += \
     android/res/layout/splash.xml \
     android/res/values-et/strings.xml
 
+RESOURCES += \
+    resources.qrc
+
 
 
 
