@@ -19,7 +19,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "saveddialog.h"
 #include "ui_saveddialog.h"
 
-SavedDialog::SavedDialog(QWidget *parent) :
+SavedDialog::SavedDialog(QString fileName, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SavedDialog)
 {
@@ -27,6 +27,7 @@ SavedDialog::SavedDialog(QWidget *parent) :
     QPalette background = this->palette();
     background.setBrush(QPalette::Background, QBrush(Qt::darkGreen));
     this->setPalette(background);
+    ui->label->setText("Save successful! The data was successfully saved to " + fileName);
 }
 
 SavedDialog::~SavedDialog()

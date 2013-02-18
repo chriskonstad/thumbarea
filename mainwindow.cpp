@@ -188,28 +188,37 @@ void MainWindow::on_pbSaveData_clicked()
     {
         if(photoDir.mkdir("/mnt/sdcard/thumbdata") == false)    //if couldn't make dir
         {
-            errorDialog = new ErrorDialog(this);
-            connect(errorDialog, SIGNAL(finished(int)), errorDialog, SLOT(deleteLater()));
-            errorDialog->exec();
+            showErrorDialog();
             qDebug() << "Error: Could not find or create the folder to save the data in.";
         }
     }
 
     QString fileName = photoDir.absolutePath() + "/" + patientInfoString + "-" + testInfoString + QString::number(picIndex).rightJustified(2,'0') + ".png";
     QPixmap pixMap = QPixmap::grabWidget(ui->graphicsView);
-    if(pixMap.save(fileName))
+    QFile fileToCheck(fileName, this);
+    if(!fileToCheck.exists())   //if the file does not exist, no data will be overwritten
     {
-        savedDialog = new SavedDialog(this);
-        connect(savedDialog, SIGNAL(finished(int)), savedDialog, SLOT(deleteLater()));
-        savedDialog->exec();
-        qDebug() << "Info: Picture saved as " + fileName;
+        saveFile(fileName, pixMap);
     }
-    else
+    else    //protect the existing file from being overwritten
     {
-        errorDialog = new ErrorDialog(this);
-        connect(errorDialog, SIGNAL(finished(int)), errorDialog, SLOT(deleteLater()));
-        errorDialog->exec();
-        qDebug() << "Error: Couldn't save the pixmap";
+        fileName.chop(4);   //remove the ".png" from the filename
+        fileName.append("(1)"); //add an index number
+        unsigned int fileNameIndex = 2; //next index number to try
+        int indexLength = 3;    //length of index number and parenthesis
+        fileToCheck.setFileName(fileName + ".png");
+        while(fileToCheck.exists()) //if the filename still exists
+        {
+            fileName.chop(indexLength); //remove the old index number and parenthesis
+            QString indexString = "(" + QString::number(fileNameIndex) + ")";   //create another string with an increasing number
+            indexLength = indexString.length(); //get the length of the index string to chop it off it we need to try another number
+            fileName.append(indexString);   //add the index number and parenthesis
+            fileToCheck.setFileName(fileName + ".png");  //check the new name
+
+            fileNameIndex++;    //increment in case of another try
+        }
+        fileName.append(".png");
+        saveFile(fileName, pixMap);
     }
 
     picIndex++;
@@ -501,6 +510,36 @@ QList<QPoint> MainWindow::removeOutliers(QList<QPoint> data)    //remove the out
         }
     }
     return goodList;
+}
+
+bool MainWindow::saveFile(QString fileName, QPixmap pixMap)
+{
+    if(pixMap.save(fileName))
+    {
+        showSavedDialog(fileName);
+        qDebug() << "Info: Picture saved as " + fileName;
+        return true;
+    }
+    else
+    {
+        showErrorDialog();
+        qDebug() << "Error: Couldn't save the pixmap";
+        return false;
+    }
+}
+
+void MainWindow::showErrorDialog()
+{
+    errorDialog = new ErrorDialog(this);
+    connect(errorDialog, SIGNAL(finished(int)), errorDialog, SLOT(deleteLater()));
+    errorDialog->exec();
+}
+
+void MainWindow::showSavedDialog(QString fileName)
+{
+    savedDialog = new SavedDialog(fileName, this);
+    connect(savedDialog, SIGNAL(finished(int)), savedDialog, SLOT(deleteLater()));
+    savedDialog->exec();
 }
 
 QPointF MainWindow::calcCircle(QList<QPoint> data)

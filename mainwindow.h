@@ -73,6 +73,10 @@ public slots:
     void clearOldAnalysis();
     QList<QPoint> removeOutliers(QList<QPoint> data);
 
+    bool saveFile(QString fileName, QPixmap pixMap);
+    void showErrorDialog();
+    void showSavedDialog(QString fileName);
+
     void drawDataFieldInformation();
 
     void on_pbSaveData_clicked();

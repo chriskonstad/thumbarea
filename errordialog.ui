@@ -31,8 +31,7 @@
       </font>
      </property>
      <property name="text">
-      <string>&lt;font color='white&gt;Save failed. 
-Unable to save the data to the storage folder.&lt;/font&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ffffff;&quot;&gt;Save failed. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#ffffff;&quot;&gt;Unable to save the data to the storage folder&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

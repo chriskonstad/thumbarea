@@ -20,6 +20,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include <QDialog>
+#include <QString>
 
 namespace Ui {
     class SavedDialog;
@@ -30,7 +31,7 @@ class SavedDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SavedDialog(QWidget *parent = 0);
+    explicit SavedDialog(QString fileName, QWidget *parent = 0);
     ~SavedDialog();
 
 private:
