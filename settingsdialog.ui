@@ -60,6 +60,9 @@
        <pointsize>9</pointsize>
       </font>
      </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhNoPredictiveText</set>
+     </property>
      <property name="placeholderText">
       <string/>
      </property>
@@ -111,6 +114,9 @@
        <pointsize>9</pointsize>
       </font>
      </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhNoPredictiveText</set>
+     </property>
      <property name="placeholderText">
       <string/>
      </property>
@@ -161,6 +167,9 @@
       <font>
        <pointsize>9</pointsize>
       </font>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhDigitsOnly</set>
      </property>
      <property name="placeholderText">
       <string/>
